@@ -1003,15 +1003,16 @@ function speak(text,rate=0.85,onEnd=null,onBoundary=null){
   synth.cancel();
   if(_curAudio){_curAudio.pause();_curAudio=null;}
   if(!onBoundary){
-    try{
-      const url=`https://translate.googleapis.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=en&client=tw-ob`;
-      const a=new Audio(url);
-      a.playbackRate=Math.max(0.5,Math.min(2,rate));
-      if(onEnd)a.onended=onEnd;
-      _curAudio=a;
-      a.play().catch(()=>_wsSpeakFallback(text,rate,onEnd,null));
-      return;
-    }catch(e){}
+    const spRate=Math.max(0.5,Math.min(2,rate));
+    const _tryGT=()=>{
+      const a2=new Audio(`https://translate.googleapis.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=en-US&client=tw-ob`);
+      a2.playbackRate=spRate;if(onEnd)a2.onended=onEnd;_curAudio=a2;
+      a2.play().catch(()=>_wsSpeakFallback(text,rate,onEnd,null));
+    };
+    const a=new Audio(`https://api.streamelements.com/kappa/v2/speech?voice=en-US-BrianNeural&text=${encodeURIComponent(text)}`);
+    a.playbackRate=spRate;if(onEnd)a.onended=onEnd;_curAudio=a;
+    a.play().catch(_tryGT);
+    return;
   }
   _wsSpeakFallback(text,rate,onEnd,onBoundary);
 }

@@ -999,19 +999,33 @@ function bestVoice(){
   return null;
 }
 let _curAudio=null;
+function _playAudio(url,spRate,onEnd,onFail){
+  const a=new Audio(url);
+  a.playbackRate=spRate;
+  if(onEnd)a.onended=onEnd;
+  _curAudio=a;
+  let done=false;
+  const fail=()=>{if(!done){done=true;if(_curAudio===a){_curAudio=null;}onFail();}};
+  a.onerror=fail;
+  const t=setTimeout(fail,6000);
+  a.oncanplay=()=>clearTimeout(t);
+  a.play().catch(fail);
+}
 function speak(text,rate=0.85,onEnd=null,onBoundary=null){
   synth.cancel();
   if(_curAudio){_curAudio.pause();_curAudio=null;}
   if(!onBoundary){
     const spRate=Math.max(0.5,Math.min(2,rate));
-    const _tryGT=()=>{
-      const a2=new Audio(`https://translate.googleapis.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=en-US&client=tw-ob`);
-      a2.playbackRate=spRate;if(onEnd)a2.onended=onEnd;_curAudio=a2;
-      a2.play().catch(()=>_wsSpeakFallback(text,rate,onEnd,null));
-    };
-    const a=new Audio(`https://api.streamelements.com/kappa/v2/speech?voice=en-US-BrianNeural&text=${encodeURIComponent(text)}`);
-    a.playbackRate=spRate;if(onEnd)a.onended=onEnd;_curAudio=a;
-    a.play().catch(_tryGT);
+    const _tryWS=()=>_wsSpeakFallback(text,rate,onEnd,null);
+    const _tryGT=()=>_playAudio(
+      `https://translate.googleapis.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=en-US&client=tw-ob`,
+      spRate,onEnd,_tryWS
+    );
+    const _trySE=()=>_playAudio(
+      `https://api.streamelements.com/kappa/v2/speech?voice=en-US-BrianNeural&text=${encodeURIComponent(text)}`,
+      spRate,onEnd,_tryGT
+    );
+    _trySE();
     return;
   }
   _wsSpeakFallback(text,rate,onEnd,onBoundary);

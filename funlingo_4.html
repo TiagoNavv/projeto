@@ -998,6 +998,14 @@ function bestVoice(){
   }
   return null;
 }
+/* iOS requires a user gesture to unlock the audio context before Audio.play() works.
+   Play a silent clip on first tap so subsequent speak() calls work immediately. */
+const _silentWav='data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+document.addEventListener('pointerdown',function _unlockAudio(){
+  const s=new Audio(_silentWav);s.play().catch(()=>{});
+  document.removeEventListener('pointerdown',_unlockAudio,true);
+},{once:true,capture:true});
+
 let _curAudio=null;
 function _playAudio(url,spRate,onEnd,onFail){
   const a=new Audio(url);

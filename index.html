@@ -1019,10 +1019,13 @@ function _playAudio(url,spRate,onEnd,onFail){
   a.oncanplay=()=>clearTimeout(t);
   a.play().catch(fail);
 }
+const _isIOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
 function speak(text,rate=0.85,onEnd=null,onBoundary=null){
   synth.cancel();
   if(_curAudio){_curAudio.pause();_curAudio=null;}
-  if(!onBoundary){
+  // iOS has excellent native voices — use Web Speech API directly for best quality.
+  // Android needs external TTS to avoid system-language (Portuguese) being used.
+  if(!onBoundary&&!_isIOS){
     const spRate=Math.max(0.5,Math.min(2,rate));
     const _tryWS=()=>_wsSpeakFallback(text,rate,onEnd,null);
     const _tryGT=()=>_playAudio(

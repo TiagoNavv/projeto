@@ -988,22 +988,29 @@ function loadV(){voices=synth.getVoices();if(!voices.length)setTimeout(loadV,250
 loadV();
 if(synth.onvoiceschanged!==undefined)synth.onvoiceschanged=loadV;
 function bestVoice(){
+  const all=synth.getVoices();
+  if(all.length>voices.length)voices=all;
+  const exact=voices.find(x=>x.name==='Google US English');
+  if(exact)return exact;
   for(const p of['en-US','en-GB','en-AU','en']){
-    const v=voices.find(x=>x.lang.startsWith(p)&&!x.name.toLowerCase().includes('google'));
+    const v=voices.find(x=>x.lang.startsWith(p));
     if(v)return v;
-    const v2=voices.find(x=>x.lang.startsWith(p));
-    if(v2)return v2;
   }
   return null;
 }
 function speak(text,rate=0.85,onEnd=null,onBoundary=null){
   synth.cancel();
-  const u=new SpeechSynthesisUtterance(text);
-  u.lang='en-US';u.rate=rate;u.pitch=1.08;
-  const v=bestVoice();if(v)u.voice=v;
-  if(onEnd)u.onend=onEnd;
-  if(onBoundary)u.addEventListener('boundary',onBoundary);
-  synth.speak(u);return u;
+  const doSpeak=()=>{
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang='en-US';u.rate=rate;u.pitch=1.08;
+    const v=bestVoice();if(v)u.voice=v;
+    if(onEnd)u.onend=onEnd;
+    if(onBoundary)u.addEventListener('boundary',onBoundary);
+    synth.speak(u);return u;
+  };
+  const v=synth.getVoices();
+  if(v.length){voices=v;return doSpeak();}
+  setTimeout(()=>{voices=synth.getVoices();doSpeak();},300);
 }
 
 /* HOME ANIMATIONS */

@@ -994,7 +994,7 @@ function bestVoice(){
     const v2=voices.find(x=>x.lang.startsWith(p));
     if(v2)return v2;
   }
-  return voices[0]||null;
+  return null;
 }
 function speak(text,rate=0.85,onEnd=null,onBoundary=null){
   synth.cancel();
